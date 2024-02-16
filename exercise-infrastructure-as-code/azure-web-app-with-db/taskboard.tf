@@ -17,12 +17,12 @@ resource "random_integer" "random_integer" {
 }
 
 resource "azurerm_resource_group" "resource_group" {
-  name     = "TaskBoardRG${random_integer.random_integer.result}"
-  location = "West Europe"
+  name     = "${var.resource_group_name}${random_integer.random_integer.result}"
+  location = var.resource_group_location
 }
 
 resource "azurerm_service_plan" "service_plan" {
-  name                = "taskboard-${random_integer.random_integer.result}"
+  name                = "${var.app_service_plan_name}-${random_integer.random_integer.result}"
   resource_group_name = azurerm_resource_group.resource_group.name
   location            = azurerm_resource_group.resource_group.location
   os_type             = "Linux"
@@ -30,7 +30,7 @@ resource "azurerm_service_plan" "service_plan" {
 }
 
 resource "azurerm_linux_web_app" "web_app" {
-  name                = azurerm_service_plan.service_plan.name
+  name                = "${var.app_service_name}-${random_integer.random_integer.result}"
   resource_group_name = azurerm_service_plan.service_plan.resource_group_name
   location            = azurerm_service_plan.service_plan.location
   service_plan_id     = azurerm_service_plan.service_plan.id
@@ -52,23 +52,23 @@ resource "azurerm_linux_web_app" "web_app" {
 
 resource "azurerm_app_service_source_control" "source" {
   app_id                 = azurerm_linux_web_app.web_app.id
-  repo_url               = "https://github.com/DanieII/TaskBoard-DevOps"
+  repo_url               = var.repo_URL
   branch                 = "main"
   use_manual_integration = true
 }
 
 resource "azurerm_mssql_server" "mssql_server" {
-  name                         = "db-server-${random_integer.random_integer.result}"
+  name                         = "${var.sql_server_name}-${random_integer.random_integer.result}"
   resource_group_name          = azurerm_resource_group.resource_group.name
   location                     = azurerm_resource_group.resource_group.location
   version                      = "12.0"
-  administrator_login          = "adminadmin"
-  administrator_login_password = "serverPass11"
+  administrator_login          = var.sql_admin_login
+  administrator_login_password = var.sql_admin_password
   minimum_tls_version          = "1.2"
 }
 
 resource "azurerm_mssql_database" "mssql_database" {
-  name           = "db"
+  name           = var.sql_database_name
   server_id      = azurerm_mssql_server.mssql_server.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
   license_type   = "LicenseIncluded"
@@ -77,7 +77,7 @@ resource "azurerm_mssql_database" "mssql_database" {
 }
 
 resource "azurerm_mssql_firewall_rule" "firewall" {
-  name             = "FirewallRule1"
+  name             = var.firewall_rule_name
   server_id        = azurerm_mssql_server.mssql_server.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "0.0.0.0"
