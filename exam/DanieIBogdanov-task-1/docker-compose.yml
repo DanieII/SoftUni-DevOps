@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  mongodb:
+    image: mongo
+    networks:
+      - shopping-list
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: max
+      MONGO_INITDB_ROOT_PASSWORD: secret
+    volumes:
+      - "data:/data/db"
+
+  backend:
+    depends_on: ["mongodb"]
+    image: "danieii/shopping-list-backend"
+    networks:
+    - shopping-list
+    ports:
+      - "80:80"
+    volumes:
+      - "logs:/logs"
+      - "node_modules:/node_modules"
+
+  frontend:
+    image: "danieii/shopping-list-frontend"
+    networks:
+      - shopping-list
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./frontend/src/:/src"
+
+networks:
+  shopping-list:
+  
+volumes:
+  data:
+  logs:
+  node_modules:
